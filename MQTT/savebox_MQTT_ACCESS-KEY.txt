@@ -1,0 +1,5 @@
+{
+    "access_key": "KY6rLve4",
+    "access_code": "KuP2YGfoDtk41a54SCVrUx8RCfsAoVZ5",
+    "type": "MQTT"
+}

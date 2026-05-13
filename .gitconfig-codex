@@ -1,0 +1,5 @@
+[safe]
+	directory = D:/Learning/ESP32-IDF/Espressif/frameworks/esp-idf-v5.5
+	directory = D:/Learning/ESP32-IDF/Espressif/frameworks/esp-idf-v5.5/components/openthread/openthread
+	directory = D:/Learning/ESP32-IDF/Espressif/frameworks/esp-idf-v5.5
+	directory = D:/Learning/ESP32-IDF/Espressif/frameworks/esp-idf-v5.5/components/openthread/openthread
