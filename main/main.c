@@ -11,6 +11,7 @@
 #include "savebox_mqtt.h"
 #include "sdkconfig.h"
 #include "task_list.h"
+#include "task_rc522.h"
 #include "task_state.h"
 
 static void savebox_print_chip_info(void)
@@ -62,6 +63,12 @@ void app_main(void)
     printf("[boot_trace] before savebox_mqtt_start\n");
     savebox_mqtt_start();
     printf("[boot_trace] after savebox_mqtt_start\n");
+
+#if SAVEBOX_ENABLE_TASK_RC522 && SAVEBOX_ENABLE_TASK_RC522_DEFERRED_STARTUP
+    printf("[boot_trace] deferred start task_rc522\n");
+    task_rc522_start();
+    printf("[boot_trace] deferred task_rc522 started\n");
+#endif
 
     printf("ESP_APP + ESP_BSP migration active.\n");
     printf("Compatibility headers moved to /compat.\n");

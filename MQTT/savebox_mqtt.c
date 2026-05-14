@@ -392,45 +392,59 @@ static esp_err_t savebox_wifi_init(void)
     esp_err_t err = ESP_OK;
 
     if (s_wifi_ready) {
+        printf("[mqtt_trace] wifi already ready\n");
         return ESP_OK;
     }
 
+    printf("[mqtt_trace] before esp_netif_init\n");
     err = esp_netif_init();
+    printf("[mqtt_trace] after esp_netif_init err=%s\n", esp_err_to_name(err));
     if ((err != ESP_OK) && (err != ESP_ERR_INVALID_STATE)) {
         return err;
     }
 
+    printf("[mqtt_trace] before esp_event_loop_create_default\n");
     err = esp_event_loop_create_default();
+    printf("[mqtt_trace] after esp_event_loop_create_default err=%s\n", esp_err_to_name(err));
     if ((err != ESP_OK) && (err != ESP_ERR_INVALID_STATE)) {
         return err;
     }
 
     if (s_sta_netif == NULL) {
+        printf("[mqtt_trace] before esp_netif_create_default_wifi_sta\n");
         s_sta_netif = esp_netif_create_default_wifi_sta();
         if (s_sta_netif == NULL) {
+            printf("[mqtt_trace] esp_netif_create_default_wifi_sta failed\n");
             return ESP_FAIL;
         }
+        printf("[mqtt_trace] after esp_netif_create_default_wifi_sta\n");
     }
 
+    printf("[mqtt_trace] before esp_wifi_init\n");
     err = esp_wifi_init(&cfg);
+    printf("[mqtt_trace] after esp_wifi_init err=%s\n", esp_err_to_name(err));
     if ((err != ESP_OK) && (err != ESP_ERR_INVALID_STATE)) {
         return err;
     }
 
+    printf("[mqtt_trace] before register WIFI_EVENT handler\n");
     err = esp_event_handler_instance_register(WIFI_EVENT,
                                               ESP_EVENT_ANY_ID,
                                               &savebox_wifi_event_handler,
                                               NULL,
                                               &s_wifi_event_instance);
+    printf("[mqtt_trace] after register WIFI_EVENT handler err=%s\n", esp_err_to_name(err));
     if (err != ESP_OK) {
         return err;
     }
 
+    printf("[mqtt_trace] before register IP_EVENT handler\n");
     err = esp_event_handler_instance_register(IP_EVENT,
                                               IP_EVENT_STA_GOT_IP,
                                               &savebox_wifi_event_handler,
                                               NULL,
                                               &s_ip_event_instance);
+    printf("[mqtt_trace] after register IP_EVENT handler err=%s\n", esp_err_to_name(err));
     if (err != ESP_OK) {
         return err;
     }
@@ -441,22 +455,30 @@ static esp_err_t savebox_wifi_init(void)
     wifi_config.sta.pmf_cfg.capable = true;
     wifi_config.sta.pmf_cfg.required = false;
 
+    printf("[mqtt_trace] before esp_wifi_set_mode\n");
     err = esp_wifi_set_mode(WIFI_MODE_STA);
+    printf("[mqtt_trace] after esp_wifi_set_mode err=%s\n", esp_err_to_name(err));
     if (err != ESP_OK) {
         return err;
     }
 
+    printf("[mqtt_trace] before esp_wifi_set_storage\n");
     err = esp_wifi_set_storage(WIFI_STORAGE_RAM);
+    printf("[mqtt_trace] after esp_wifi_set_storage err=%s\n", esp_err_to_name(err));
     if (err != ESP_OK) {
         return err;
     }
 
+    printf("[mqtt_trace] before esp_wifi_set_config\n");
     err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    printf("[mqtt_trace] after esp_wifi_set_config err=%s\n", esp_err_to_name(err));
     if (err != ESP_OK) {
         return err;
     }
 
+    printf("[mqtt_trace] before esp_wifi_start\n");
     err = esp_wifi_start();
+    printf("[mqtt_trace] after esp_wifi_start err=%s\n", esp_err_to_name(err));
     if (err != ESP_OK) {
         return err;
     }
@@ -576,6 +598,7 @@ esp_err_t savebox_mqtt_start(void)
     esp_err_t err = ESP_OK;
 
     if (s_started) {
+        printf("[mqtt_trace] mqtt already started\n");
         return ESP_OK;
     }
 
@@ -585,30 +608,38 @@ esp_err_t savebox_mqtt_start(void)
     }
 
     if (s_event_group == NULL) {
+        printf("[mqtt_trace] before xEventGroupCreate\n");
         s_event_group = xEventGroupCreate();
         if (s_event_group == NULL) {
             return ESP_ERR_NO_MEM;
         }
+        printf("[mqtt_trace] after xEventGroupCreate\n");
     }
 
+    printf("[mqtt_trace] before nvs_flash_init\n");
     err = nvs_flash_init();
+    printf("[mqtt_trace] after nvs_flash_init err=%s\n", esp_err_to_name(err));
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         esp_err_t erase_err = nvs_flash_erase();
         if (erase_err != ESP_OK) {
             return erase_err;
         }
         err = nvs_flash_init();
+        printf("[mqtt_trace] after nvs_flash_erase+nvs_flash_init err=%s\n", esp_err_to_name(err));
     }
     if (err != ESP_OK) {
         return err;
     }
 
+    printf("[mqtt_trace] before savebox_wifi_init\n");
     err = savebox_wifi_init();
+    printf("[mqtt_trace] after savebox_wifi_init err=%s\n", esp_err_to_name(err));
     if (err != ESP_OK) {
         return err;
     }
 
     if (s_publish_task_handle == NULL) {
+        printf("[mqtt_trace] before create mqtt_publish task\n");
         if (xTaskCreate(savebox_mqtt_publish_task,
                         "mqtt_publish",
                         4096,
@@ -617,6 +648,7 @@ esp_err_t savebox_mqtt_start(void)
                         &s_publish_task_handle) != pdPASS) {
             return ESP_ERR_NO_MEM;
         }
+        printf("[mqtt_trace] after create mqtt_publish task\n");
     }
 
     s_started = true;

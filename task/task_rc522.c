@@ -5,7 +5,6 @@
 #include <string.h>
 
 #include "app_rc522.h"
-#include "bsp_platform.h"
 #include "bsp_uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -33,6 +32,17 @@ static void task_rc522_entry(void *arg)
     uint32_t last_card_time = 0U;
 
     (void)arg;
+
+    printf("[task_rc522] probe start\n");
+    UART_Printf(&huart1, "RC522 probe start\r\n");
+
+    RC522_Init();
+    printf("[task_rc522] init done\n");
+    UART_Printf(&huart1, "RC522 init done\r\n");
+
+    const u8 version = RC522_ReadRawRC(VersionReg);
+    printf("[task_rc522] version=0x%02X\n", version);
+    UART_Printf(&huart1, "RC522_VERSION=0x%02X\r\n", version);
 
     for (;;) {
         if ((RC522_PcdRequest(PICC_REQIDL, tag_type) == MI_OK) &&

@@ -350,12 +350,19 @@ void RC522_CalulateCRC(u8 *pIn, u8 len, u8 *pOut)
  */
 char RC522_PcdReset()
 {
-    RC522_RST(1);
-    delay_ms(10);
-    RC522_RST(0);
-    delay_us(1);
-    RC522_RST(1);
-    delay_us(1);
+    if (RC522_RST_Pin != GPIO_NUM_NC)
+    {
+        RC522_RST(1);
+        delay_ms(10);
+        RC522_RST(0);
+        delay_us(1);
+        RC522_RST(1);
+        delay_us(1);
+    }
+    else
+    {
+        delay_ms(10);
+    }
 
     // 复位命令
     RC522_WriteRawRC(CommandReg, PCD_RESETPHASE);
