@@ -62,7 +62,7 @@ bool task_servo_set_angle(float angle)
 
 bool task_servo_lock(void)
 {
-    const bool ok = task_servo_set_angle(90.0f);
+    const bool ok = task_servo_set_angle(70.0f);
     if (ok) {
         task_state_set_lock(true, HAL_GetTick());
     }
@@ -71,7 +71,7 @@ bool task_servo_lock(void)
 
 bool task_servo_unlock(void)
 {
-    const bool ok = task_servo_set_angle(10.0f);
+    const bool ok = task_servo_set_angle(160.0f);
     if (ok) {
         task_state_set_lock(false, HAL_GetTick());
     }
