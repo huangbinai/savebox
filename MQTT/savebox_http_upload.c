@@ -47,6 +47,7 @@ static esp_err_t savebox_http_post_binary(const char *url,
 
     snprintf(captured_at, sizeof(captured_at), "%" PRIu32, captured_at_ms);
     esp_http_client_set_header(client, "Content-Type", "image/jpeg");
+    esp_http_client_set_header(client, "type", frame_type);
     esp_http_client_set_header(client, "X-Savebox-Device-Id", SAVEBOX_MQTT_DEVICE_ID);
     esp_http_client_set_header(client, "X-Savebox-Frame-Type", frame_type);
     esp_http_client_set_header(client, "X-Savebox-Captured-At-Ms", captured_at);
@@ -109,7 +110,7 @@ esp_err_t savebox_http_upload_latest_frame(const uint8_t *data, size_t len, uint
     return savebox_http_post_binary(SAVEBOX_HTTP_LATEST_FRAME_URL,
                                     data,
                                     len,
-                                    "latest",
+                                    "normal",
                                     NULL,
                                     captured_at_ms);
 }

@@ -43,6 +43,9 @@ static esp_err_t task_camera_capture_and_upload_latest(uint32_t now_ms)
         return ESP_FAIL;
     }
 
+    printf("[task_camera] upload latest frame captured_at=%lu len=%u\n",
+           (unsigned long)now_ms,
+           (unsigned int)fb->len);
     err = savebox_http_upload_latest_frame(fb->buf, fb->len, now_ms);
     task_state_set_camera(savebox_camera_is_ready(),
                           true,
@@ -59,15 +62,20 @@ static esp_err_t task_camera_capture_and_upload_alarm(uint32_t alarm_bits, uint3
 {
     camera_fb_t *fb = savebox_camera_capture_jpeg();
     esp_err_t err = ESP_FAIL;
+    const char *alarm_type = task_camera_alarm_type_to_text(alarm_bits);
 
     if (fb == NULL) {
         task_state_set_camera(savebox_camera_is_ready(), false, false, false, now_ms, 0U, 0U);
         return ESP_FAIL;
     }
 
+    printf("[task_camera] upload alarm frame type=%s captured_at=%lu len=%u\n",
+           alarm_type,
+           (unsigned long)now_ms,
+           (unsigned int)fb->len);
     err = savebox_http_upload_alarm_frame(fb->buf,
                                           fb->len,
-                                          task_camera_alarm_type_to_text(alarm_bits),
+                                          alarm_type,
                                           now_ms);
     task_state_set_camera(savebox_camera_is_ready(),
                           true,

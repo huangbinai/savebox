@@ -23,7 +23,7 @@ typedef struct {
     bool alarm;
     uint32_t updated_at_ms;
 } savebox_mq2_state_t;
-
+ 
 typedef struct {
     bool valid;
     bool alarm;

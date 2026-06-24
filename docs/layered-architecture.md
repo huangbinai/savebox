@@ -1,0 +1,174 @@
+# Savebox 项目分层架构图
+
+```mermaid
+flowchart TB
+    subgraph L0["启动入口层 main/"]
+        Main["app_main()"]
+        BootInfo["芯片信息与启动日志"]
+    end
+
+    subgraph L1["业务任务层 task/"]
+        TaskList["TASK_StartAll()"]
+        State["task_state<br/>运行态状态中心"]
+        TCamera["task_camera<br/>拍照、告警抓拍、HTTP 上传"]
+        TBuzzer["task_buzzer<br/>蜂鸣器队列控制"]
+        TServo["task_servo<br/>门锁开关控制"]
+        TUart["task_uart<br/>串口命令交互"]
+        TDht11["task_dht11<br/>温湿度采集"]
+        TRc522["task_rc522<br/>RFID 刷卡识别"]
+        TMq2["task_mq2<br/>气体检测"]
+        TSw180["task_sw180<br/>振动检测"]
+        TOled["task_oled<br/>状态显示刷新"]
+    end
+
+    subgraph L2["联网与云端通信层 MQTT/"]
+        Mqtt["savebox_mqtt<br/>Wi-Fi/MQTT 建连、状态上报、命令订阅"]
+        HttpUpload["savebox_http_upload<br/>图片与状态 HTTP 上传"]
+        MqttCfg["savebox_mqtt_config<br/>Wi-Fi、Broker、Topic、HTTP URL 配置"]
+    end
+
+    subgraph L3["设备功能封装层 ESP_APP/"]
+        AppList["APP_Init()"]
+        CameraApp["app_camera<br/>ESP32 Camera 初始化、抓帧"]
+        BuzzerApp["app_Buzzer<br/>蜂鸣器控制"]
+        ServoApp["app_servo<br/>舵机控制"]
+        Dht11App["app_DHT11<br/>DHT11 读写"]
+        Rc522App["app_rc522<br/>RC522 驱动封装"]
+        Mq2App["app_mq2<br/>MQ-2 采样封装"]
+        Sw180App["app_sw180<br/>SW180 输入封装"]
+    end
+
+    subgraph L4["板级支持与兼容层 ESP_BSP/ + compat/"]
+        BspList["BSP_Init()"]
+        Platform["bsp_platform<br/>GPIO/SPI/UART/PWM HAL 兼容桥接"]
+        Adc["bsp_adc<br/>ADC 读取"]
+        Timer["bsp_timer<br/>PWM/定时接口"]
+        Uart["bsp_uart<br/>UART 读写"]
+        Gpio["bsp_gpio<br/>GPIO 兼容接口"]
+        OledDrv["app_oled + OLED_font<br/>OLED 驱动与字库"]
+        Compat["compat/*.h<br/>STM32 HAL 风格兼容头"]
+        Board["savebox_board.h<br/>引脚、开关、任务配置"]
+    end
+
+    subgraph L5["ESP-IDF 与第三方组件"]
+        FreeRTOS["FreeRTOS<br/>Task/Queue/Semaphore/EventGroup"]
+        EspDrivers["ESP-IDF Drivers<br/>GPIO/ADC/SPI/UART/LEDC/Timer"]
+        NetStack["ESP-IDF Network<br/>Wi-Fi/MQTT/HTTP/TLS/NVS/Event"]
+        Json["cJSON"]
+        CamComp["esp32-camera"]
+    end
+
+    subgraph L6["硬件与外部系统"]
+        Hardware["ESP32-S3 + 外设<br/>Camera/OLED/DHT11/MQ-2/SW180/RC522/Servo/Buzzer/UART"]
+        Cloud["云端/服务器<br/>Huawei IoTDA MQTT Broker + HTTP 图片服务"]
+    end
+
+    Main --> BootInfo
+    Main --> BspList
+    Main --> AppList
+    Main --> State
+    Main --> TaskList
+    Main --> Mqtt
+
+    TaskList --> TCamera
+    TaskList --> TBuzzer
+    TaskList --> TServo
+    TaskList --> TUart
+    TaskList --> TDht11
+    TaskList --> TRc522
+    TaskList --> TMq2
+    TaskList --> TSw180
+    TaskList --> TOled
+
+    TDht11 --> State
+    TMq2 --> State
+    TSw180 --> State
+    TRc522 --> State
+    TServo --> State
+    TCamera --> State
+    TUart --> State
+    TOled --> State
+    Mqtt --> State
+    HttpUpload --> State
+
+    TCamera --> CameraApp
+    TCamera --> HttpUpload
+    TDht11 --> Dht11App
+    TMq2 --> Mq2App
+    TSw180 --> Sw180App
+    TRc522 --> Rc522App
+    TServo --> ServoApp
+    TBuzzer --> BuzzerApp
+    TOled --> OledDrv
+    TUart --> Uart
+
+    Mqtt --> TServo
+    Mqtt --> TBuzzer
+    Mqtt --> MqttCfg
+    HttpUpload --> MqttCfg
+
+    AppList --> CameraApp
+    AppList --> ServoApp
+    AppList --> Sw180App
+    AppList --> Rc522App
+    AppList --> Mq2App
+
+    BspList --> Platform
+    BspList --> Timer
+    BspList --> Uart
+    BspList --> OledDrv
+    Platform --> Compat
+    Platform --> Board
+    Adc --> Board
+    Timer --> Board
+    Uart --> Board
+    Gpio --> Board
+    OledDrv --> Board
+
+    CameraApp --> CamComp
+    Mq2App --> Adc
+    Dht11App --> Gpio
+    Sw180App --> Gpio
+    ServoApp --> Timer
+    BuzzerApp --> Gpio
+    Rc522App --> Platform
+
+    State --> FreeRTOS
+    TaskList --> FreeRTOS
+    Platform --> EspDrivers
+    Adc --> EspDrivers
+    Timer --> EspDrivers
+    Uart --> EspDrivers
+    Mqtt --> NetStack
+    HttpUpload --> NetStack
+    Mqtt --> Json
+    HttpUpload --> Json
+
+    EspDrivers --> Hardware
+    CamComp --> Hardware
+    NetStack --> Cloud
+```
+
+## 启动顺序
+
+```text
+app_main()
+  -> savebox_print_chip_info()
+  -> BSP_Init()
+  -> APP_Init()
+  -> task_state_init()
+  -> TASK_StartAll()
+  -> savebox_mqtt_start()
+  -> task_rc522_start()  // 仅在启用延迟启动时执行
+```
+
+## 核心分层
+
+- `main/`：系统启动入口，串起 BSP、APP、任务、运行态状态中心和 MQTT。
+- `task/`：业务任务层，负责周期采样、状态更新、联动报警、OLED 刷新、UART 命令和门锁行为。
+- `MQTT/`：联网扩展层，负责 Wi-Fi、MQTT、云端命令、状态上报和 HTTP 图片/状态上传。
+- `ESP_APP/`：设备功能封装层，封装摄像头、传感器、舵机、蜂鸣器、RFID 等模块能力。
+- `ESP_BSP/`：板级支持层，封装 GPIO、ADC、UART、SPI、PWM、OLED 等底层适配。
+- `compat/`：STM32 HAL 风格兼容头，用于降低迁移成本。
+- `savebox_board.h`：全局硬件引脚、模块开关、任务配置和板级参数。
+

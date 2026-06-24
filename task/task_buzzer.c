@@ -1,5 +1,6 @@
 #include "task_buzzer.h"
 
+#include "driver/gpio.h"
 #include "bsp_gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -31,9 +32,20 @@ static void task_buzzer_entry(void *arg)
 
 void task_buzzer_start(void)
 {
+    const gpio_config_t config = {
+        .pin_bit_mask = 1ULL << Buzzer_Pin,
+        .mode = GPIO_MODE_OUTPUT,
+        .pull_up_en = GPIO_PULLUP_DISABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type = GPIO_INTR_DISABLE,
+    };
+
     if (s_buzzer_queue != NULL) {
         return;
     }
+
+    gpio_config(&config);
+    gpio_set_level((gpio_num_t)Buzzer_Pin, 1);
 
     s_buzzer_queue = xQueueCreate(TASK_BUZZER_QUEUE_LENGTH, sizeof(uint32_t));
     if (s_buzzer_queue == NULL) {

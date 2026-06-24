@@ -291,6 +291,20 @@ void OLED_Clear(void)
     OLED_Fill(0x00U);
 }
 
+void OLED_ClearLine(uint8_t y)
+{
+    uint8_t column = 0U;
+
+    if (y >= OLED_PAGE_COUNT) {
+        return;
+    }
+
+    OLED_Set_Pos(0U, y);
+    for (column = 0U; column < OLED_PIXEL_WIDTH; ++column) {
+        OLED_WriteByte(0x00U, OLED_DATA);
+    }
+}
+
 void OLED_Set_Pos(unsigned char x, unsigned char y)
 {
     OLED_WriteByte((uint8_t)(0xB0U + y), OLED_CMD);

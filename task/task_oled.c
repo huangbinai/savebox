@@ -49,6 +49,7 @@ static void task_oled_update_line(char cache[TASK_OLED_LINE_COUNT][TASK_OLED_LIN
                                   char padded[TASK_OLED_LINE_CHAR_CAPACITY + 1U])
 {
     if (task_oled_prepare_line(cache, line, text, padded)) {
+        OLED_ClearLine(line);
         OLED_ShowString8x8(0, line, padded);
     }
 }
@@ -70,6 +71,7 @@ static void task_oled_entry(void *arg)
     OLED_Clear();
 
     for (;;) {
+        
         task_state_get_lock(&lock_state);
         task_state_get_dht11(&dht11_state);
         task_state_get_mq2(&mq2_state);
